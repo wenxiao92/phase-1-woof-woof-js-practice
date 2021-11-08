@@ -1,79 +1,107 @@
 document.addEventListener('DOMContentLoaded', function() {
+
+    function renderInitial(){
     fetch("http://localhost:3000/pups")
     .then(resp => resp.json())
     .then(function(data) {
     //advanced method using a function to create arrays of the key names
-    function findProp(obj, prop) {
-        let result = [];
-        function recursivelyFindProp(o, keyName) {
-          Object.keys(o).forEach(function(key) {
-            if(typeof o[key] === 'object') {
-              recursivelyFindProp(o[key], keyName);
-            } else {
-              if (key === keyName) result.push(o[key]);
-            }
-          });
-        }
-        recursivelyFindProp(obj, prop);
-        return result;
-      }
-      let dogNames = findProp(data, "name")
-      let isGoodBad = findProp(data, "isGoodDog")
-      let dogImg = findProp(data, "image")
+    renderAllDogs(data)
 
-      //console.log(dogNames, isGoodBad, dogImg) //c log to see if data is pulling correctly
+    //render all dogs on top of page
+    function renderAllDogs(dogs){
+        //console.log("dogs",dogs)
+        dogs.forEach(renderSingleDog)
+    }
+    }) //end of .then of first fetch
+    }
 
-      let dogBar = document.querySelector("#dog-bar")
-      
-      //renders the animals and good/bad button
-      for (i = 0; i< data.length; i++) {
-          let span = document.createElement('span')
-          span.innerText = dogNames[i]
-          document.querySelector('#dog-bar').append(span)
-          span.addEventListener('click', (e) => {
-            let span = e.target
-            let index = dogNames.findIndex(x => x === `${span.innerText}`)
-            //console.log(index) //test to see if findIndex works
-            let currentBtn = document.createElement('button')
-            if(isGoodBad[index] == true) {
-                currentBtn.innerText = "Good Dog"
-            } else {
-                currentBtn.innerText = "Bad Dog"
-            }
-            document.querySelector('#dog-info').innerHTML = `
-            <img src=${dogImg[index]} />
-            <h2>${dogNames[index]}</h2>
-            `
-            document.querySelector('#dog-info').append(currentBtn) //grabs Good or bad dog
+    //function that pulls a single dog and then displays the dog(based on a cb function) based on a click event listener
+    function renderSingleDog(oneDog){
+        let span = document.createElement('span')
+        span.innerText = oneDog.name
+        document.querySelector('#dog-bar').append(span)
+        span.addEventListener('click', (e) => {
+            dogClick(e, oneDog.image, oneDog.isGoodDog, oneDog.name, oneDog.id)
+        })
+    }
 
-            currentBtn.addEventListener('click', (e) =>{
-                let currentBtn = e.target
-                if (currentBtn.innerText = "Good Dog") {
-                    let status = true
-                }   else {
-                    let status = false
-                }
 
-                fetch('http://localhost:3000/pups', {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body:JSON.stringify({
-                        isGoodDog: `${status}`
-                    })
-                })
-                .then(resp => resp.json())
-                .then(data => console.log(data))
+    //function that display the current dog
+    function dogClick(event, imgUrl, goodBad, dogName, dogID){
+        //console.log(event.target, imgUrl, goodBad)
+        let dogInfoArea = document.querySelector('#dog-info')
+        dogInfoArea.innerHTML = ""
+
+        let img = document.createElement('img')
+        img.src = imgUrl
+        let hTwo = document.createElement('h2')
+        hTwo.innerText = dogName
+        let button = document.createElement('button')
+        button.innerText = (goodBad ? "Good Dog" : "Bad Dog")
+        dogInfoArea.append(img, hTwo, button)
+        //console.log(dogInfoArea)
+
+        button.addEventListener('click',(e) =>{
+            changeStatus(button, goodBad, dogID)
+        })
+    }
+
+    //function to change the data from true to false, vice versa
+    function changeStatus(button, goodBad, dogID){
+        fetch(`http://localhost:3000/pups/${dogID}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body:JSON.stringify({
+                isGoodDog: !goodBad
             })
+        })
+        .then(resp => resp.json())
+        .then(function(data){
+            console.log(data)
+            dogClick(event, data.image, data.isGoodDog, data.name, data.id)
+        }
+        )} //end of changeStatus function
 
-        }) //end of display dogs event listener
-      } //end of for loop
 
+        let toggle = document.querySelector('#good-dog-filter')
+        toggle.addEventListener('click', function(){
+            fetch("http://localhost:3000/pups")
+            .then(resp => resp.json())
+            .then(function(data) {
+                if(toggle.innerText === "Filter good dogs: OFF") {
+                    toggle.innerText = "Filter good dogs: ON"
+                    renderTrueFalseDog(data)
+                } else {
+                    toggle.innerText = "Filter good dogs: OFF"
+                    document.querySelector('#dog-bar').innerHTML = ''
+                    data.forEach(renderSingleDog)
+                }
+        })
+        })
 
+        function renderTrueFalseDog(dog){
+            document.querySelector('#dog-bar').innerHTML = ''
+            
+            let trueFalse = dog.filter(status => {
+                return status.isGoodDog == true
+            })
+            trueFalse.forEach(renderStatusDog)
 
-    }) //end of .then
+            }
 
+        function renderStatusDog(oneDog){
+            let span = document.createElement('span')
+            span.innerText = oneDog.name
+            document.querySelector('#dog-bar').append(span)
+            span.addEventListener('click', (e) => {
+                dogClick(e, oneDog.image, oneDog.isGoodDog, oneDog.name, oneDog.id)
+        })
+
+    }        
+        
+renderInitial()
 
 
 
