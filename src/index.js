@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-
     function renderInitial(){
     fetch("http://localhost:3000/pups")
     .then(resp => resp.json())
@@ -59,11 +58,19 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(resp => resp.json())
         .then(function(data){
-            console.log(data)
             dogClick(event, data.image, data.isGoodDog, data.name, data.id)
+            reRenderTrueDogs()
         }
         )} //end of changeStatus function
 
+        //displays the new list of dogs that are true (requires cb function)
+        function reRenderTrueDogs(){
+            fetch("http://localhost:3000/pups")
+            .then(resp => resp.json())
+            .then(function(data){
+                renderTrueFalseDog(data)
+            })
+        }
 
         let toggle = document.querySelector('#good-dog-filter')
         toggle.addEventListener('click', function(){
@@ -76,11 +83,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     toggle.innerText = "Filter good dogs: OFF"
                     document.querySelector('#dog-bar').innerHTML = ''
-                    data.forEach(renderSingleDog)
+                    data.forEach(renderSingleDog) //line 19
                 }
         })
         })
 
+        //function that renders all the true dogs
         function renderTrueFalseDog(dog){
             document.querySelector('#dog-bar').innerHTML = ''
             
@@ -88,9 +96,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return status.isGoodDog == true
             })
             trueFalse.forEach(renderStatusDog)
-
             }
 
+        //function that redisplays the dog info(img, name and button) based on the filtered true dogs
         function renderStatusDog(oneDog){
             let span = document.createElement('span')
             span.innerText = oneDog.name
